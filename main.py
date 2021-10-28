@@ -139,14 +139,36 @@ def compute():
     width = image.shape[1]
 
     # Forward FT
-
     print('1. compute FT')
+    imageFT = forwardFT(image)
 
     # Compute magnitudes and find the maximum (excluding the DC component)
+    magnitudes = {}
+    ak = 2 * np.real(imageFT)
+    bk = -2 * np.imag(imageFT)
+
+    magnitudes = np.sqrt(
+        ak * ak + bk * bk)
+
+    temp = magnitudes[0][0]  # remember DC
+    magnitudes[0][0] = 0  # ignore DC
+    maxMag = np.max(magnitudes)  # get max
+    magnitudes[0][0] = temp  # add DC back
+    print(maxMag)
 
     print('2. computing FT magnitudes')
 
     # Zero the components that are less than 40% of the max
+    gridImageFT = np.zeros((height, width), dtype=np.complex_)
+    for i in range(height):
+        for j in range(width):
+            # if magnitude is higher than 40% of maxMag
+            if magnitudes[i][j] > (0.4 * maxMag):
+                # copy to grid ImageFT
+                gridImageFT[i, j] = magnitudes[i][j]
+            else:
+                # set to zero
+                gridImageFT[i, j] = 0
 
     print('3. removing low-magnitude components')
 
@@ -162,7 +184,7 @@ def compute():
     print('4. finding angles and distances of grid lines')
 
     # Convert back to spatial domain to get a grid-like image
-
+    gridImage = inverseFT(gridImageFT)
     print('5. inverse FT')
 
     if gridImage is None:
@@ -174,6 +196,8 @@ def compute():
 
     if resultImage is None:
         resultImage = image.copy()
+
+
 
     print('done')
 
