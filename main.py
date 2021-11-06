@@ -163,12 +163,15 @@ def compute():
     # ============================================================================================================
     # Zero the components that are less than 40% of the max
     gridImageFT = np.zeros((height, width), dtype=np.complex_)
+    coords = []
+
     for i in range(height):
         for j in range(width):
             # if magnitude is higher than 40% of maxMag
             if magnitudes[i][j] > (0.4 * maxMag):
                 # copy to grid ImageFT
                 gridImageFT[i, j] = magnitudes[i][j]
+                coords.append((i, j))
             else:
                 # set to zero
                 gridImageFT[i, j] = 0
@@ -177,17 +180,60 @@ def compute():
 
     if gridImageFT is None:
         gridImageFT = np.zeros((height, width), dtype=np.complex_)
-    # ===================================================4=========================================================
+    # ===================================================END3=========================================================
 
-    # ============================================================================================================
+    # ====================================================4========================================================
     # Find (angle, distance) to each peak
     #
     # lines = [ (angle1,distance1), (angle2,distance2) ]
 
-    lines = [[1, 2], [3, 4]]
+    #lines = [[1, 2], [3, 4]]
 
     print('4. finding angles and distances of grid lines')
-    # ============================================================================================================
+    coords_translated = []
+
+    # shifting of coordinates
+    for elem in coords:
+        i_p = wrap(elem[0] + 172, 343)
+        j_p = wrap(elem[1] + 239, 478)
+        coords_translated.append((i_p, j_p))
+
+    # finding angle1
+    coords_translated.sort(key=lambda tup: tup[1])
+    elem = coords_translated[-1]
+    angle1 = math.degrees(math.atan(np.true_divide((elem[0] - 172), (elem[1] - 239))))
+
+    # finding distance1
+    index_origin = coords_translated.index((172, 239))
+    tmp_d1 = np.sqrt((coords_translated[index_origin - 1][0] - 172) * (coords_translated[index_origin - 1][0] - 172) + (
+            coords_translated[index_origin - 1][1] - 239) * (coords_translated[index_origin - 1][1] - 239))
+    tmp_d2 = np.sqrt((coords_translated[index_origin + 1][0] - 172) * (coords_translated[index_origin + 1][0] - 172) + (
+            coords_translated[index_origin + 1][1] - 239) * (coords_translated[index_origin + 1][1] - 239))
+
+    if tmp_d1 < tmp_d2:
+        distance1 = tmp_d1
+    else:
+        distance1 = tmp_d2
+
+    # find angle2
+    coords_translated.sort(key=lambda tup: tup[0])
+    elem = coords_translated[-1]
+    angle2 = math.degrees(math.atan(np.true_divide(np.abs((elem[1] - 239)), (elem[0] - 172)))) + 90
+
+    # find distance2
+    index_origin = coords_translated.index((172, 239))
+    tmp_d1 = np.sqrt((coords_translated[index_origin - 1][0] - 172) * (coords_translated[index_origin - 1][0] - 172) + (
+            coords_translated[index_origin - 1][1] - 239) * (coords_translated[index_origin - 1][1] - 239))
+    tmp_d2 = np.sqrt((coords_translated[index_origin + 1][0] - 172) * (coords_translated[index_origin + 1][0] - 172) + (
+            coords_translated[index_origin + 1][1] - 239) * (coords_translated[index_origin + 1][1] - 239))
+
+    if tmp_d1 < tmp_d2:
+        distance2 = tmp_d1
+    else:
+        distance2 = tmp_d2
+
+    lines = [(angle1, distance1), (angle2, distance2)]
+    # ====================================================END4========================================================
 
     # ===================================================5=========================================================
     # Convert back to spatial domain to get a grid-like image
@@ -202,9 +248,15 @@ def compute():
     # Remove grid image from original image
 
     print('6. remove grid')
-
     if resultImage is None:
         resultImage = image.copy()
+
+    for i in range(height):
+        for j in range(width):
+            if gridImage[i, j] > 16:
+                resultImage[i, j] = 0
+            else:
+                resultImage[i, j] = image[i, j]
 
     print('done')
     # ============================================================================================================
