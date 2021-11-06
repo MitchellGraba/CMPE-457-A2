@@ -137,11 +137,13 @@ def compute():
 
     height = image.shape[0]
     width = image.shape[1]
-
+    # =====================================================1=======================================================
     # Forward FT
     print('1. compute FT')
     imageFT = forwardFT(image)
+    # ============================================================================================================
 
+    # =====================================================2=======================================================
     # Compute magnitudes and find the maximum (excluding the DC component)
     magnitudes = {}
     ak = 2 * np.real(imageFT)
@@ -155,9 +157,10 @@ def compute():
     maxMag = np.max(magnitudes)  # get max
     magnitudes[0][0] = temp  # add DC back
     print(maxMag)
-
     print('2. computing FT magnitudes')
+    # ==================================================3==========================================================
 
+    # ============================================================================================================
     # Zero the components that are less than 40% of the max
     gridImageFT = np.zeros((height, width), dtype=np.complex_)
     for i in range(height):
@@ -174,7 +177,9 @@ def compute():
 
     if gridImageFT is None:
         gridImageFT = np.zeros((height, width), dtype=np.complex_)
+    # ===================================================4=========================================================
 
+    # ============================================================================================================
     # Find (angle, distance) to each peak
     #
     # lines = [ (angle1,distance1), (angle2,distance2) ]
@@ -182,14 +187,18 @@ def compute():
     lines = [[1, 2], [3, 4]]
 
     print('4. finding angles and distances of grid lines')
+    # ============================================================================================================
 
+    # ===================================================5=========================================================
     # Convert back to spatial domain to get a grid-like image
     gridImage = inverseFT(gridImageFT)
     print('5. inverse FT')
 
     if gridImage is None:
         gridImage = np.zeros((height, width), dtype=np.complex_)
+    # ============================================================================================================
 
+    # ===================================================6=========================================================
     # Remove grid image from original image
 
     print('6. remove grid')
@@ -197,9 +206,8 @@ def compute():
     if resultImage is None:
         resultImage = image.copy()
 
-
-
     print('done')
+    # ============================================================================================================
 
     return resultImage, lines
 
