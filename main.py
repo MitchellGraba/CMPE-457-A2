@@ -190,47 +190,47 @@ def compute():
     #lines = [[1, 2], [3, 4]]
 
     print('4. finding angles and distances of grid lines')
-    coords_translated = []
+    translated_coords = []
 
     # shifting of coordinates
     for elem in coords:
         i_p = wrap(elem[0] + 172, 343)
         j_p = wrap(elem[1] + 239, 478)
-        coords_translated.append((i_p, j_p))
+        translated_coords.append((i_p, j_p))
 
     # finding angle1
-    coords_translated.sort(key=lambda tup: tup[1])
-    elem = coords_translated[-1]
+    translated_coords.sort(key=lambda tup: tup[1])
+    elem = translated_coords[-1]
     angle1 = math.degrees(math.atan(np.true_divide((elem[0] - 172), (elem[1] - 239))))
 
     # finding distance1
-    index_origin = coords_translated.index((172, 239))
-    tmp_d1 = np.sqrt((coords_translated[index_origin - 1][0] - 172) * (coords_translated[index_origin - 1][0] - 172) + (
-            coords_translated[index_origin - 1][1] - 239) * (coords_translated[index_origin - 1][1] - 239))
-    tmp_d2 = np.sqrt((coords_translated[index_origin + 1][0] - 172) * (coords_translated[index_origin + 1][0] - 172) + (
-            coords_translated[index_origin + 1][1] - 239) * (coords_translated[index_origin + 1][1] - 239))
+    originIdx = translated_coords.index((172, 239))
+    tmp_dist1 = np.sqrt((translated_coords[originIdx - 1][0] - 172) * (translated_coords[originIdx - 1][0] - 172) + (
+            translated_coords[originIdx - 1][1] - 239) * (translated_coords[originIdx - 1][1] - 239))
+    tmp_dist2 = np.sqrt((translated_coords[originIdx + 1][0] - 172) * (translated_coords[originIdx + 1][0] - 172) + (
+            translated_coords[originIdx + 1][1] - 239) * (translated_coords[originIdx + 1][1] - 239))
 
-    if tmp_d1 < tmp_d2:
-        distance1 = tmp_d1
+    if tmp_dist1 < tmp_dist2:
+        distance1 = tmp_dist1
     else:
-        distance1 = tmp_d2
+        distance1 = tmp_dist2
 
     # find angle2
-    coords_translated.sort(key=lambda tup: tup[0])
-    elem = coords_translated[-1]
+    translated_coords.sort(key=lambda tup: tup[0])
+    elem = translated_coords[-1]
     angle2 = math.degrees(math.atan(np.true_divide(np.abs((elem[1] - 239)), (elem[0] - 172)))) + 90
 
     # find distance2
-    index_origin = coords_translated.index((172, 239))
-    tmp_d1 = np.sqrt((coords_translated[index_origin - 1][0] - 172) * (coords_translated[index_origin - 1][0] - 172) + (
-            coords_translated[index_origin - 1][1] - 239) * (coords_translated[index_origin - 1][1] - 239))
-    tmp_d2 = np.sqrt((coords_translated[index_origin + 1][0] - 172) * (coords_translated[index_origin + 1][0] - 172) + (
-            coords_translated[index_origin + 1][1] - 239) * (coords_translated[index_origin + 1][1] - 239))
+    originIdx = translated_coords.index((172, 239))
+    tmp_dist1 = np.sqrt((translated_coords[originIdx - 1][0] - 172) * (translated_coords[originIdx - 1][0] - 172) + (
+            translated_coords[originIdx - 1][1] - 239) * (translated_coords[originIdx - 1][1] - 239))
+    tmp_dist2 = np.sqrt((translated_coords[originIdx + 1][0] - 172) * (translated_coords[originIdx + 1][0] - 172) + (
+            translated_coords[originIdx + 1][1] - 239) * (translated_coords[originIdx + 1][1] - 239))
 
-    if tmp_d1 < tmp_d2:
-        distance2 = tmp_d1
+    if tmp_dist1 < tmp_dist2:
+        distance2 = tmp_dist1
     else:
-        distance2 = tmp_d2
+        distance2 = tmp_dist2
 
     lines = [(angle1, distance1), (angle2, distance2)]
     # ====================================================END4========================================================
