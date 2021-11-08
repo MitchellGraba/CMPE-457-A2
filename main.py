@@ -9,6 +9,7 @@
 # Mitchell Graba 20056482
 
 import sys, os, math
+import random
 
 try:  # NumPy
     import numpy as np
@@ -52,7 +53,7 @@ translate = (0.0, 0.0)  # amount by which to translate images
 # Image
 
 imageDir = 'images'
-imageFilename = 'ecg-01.png'
+imageFilename = 'small.png'
 imagePath = os.path.join(imageDir, imageFilename)
 
 image = None  # the image as a 2D np.array
@@ -138,133 +139,100 @@ def compute():
 
     height = image.shape[0]
     width = image.shape[1]
-    # =====================================================1=======================================================
+
     # Forward FT
     print('1. compute FT')
     imageFT = forwardFT(image)
-    # ============================================================================================================
 
-    # =====================================================2=======================================================
     # Compute magnitudes and find the maximum (excluding the DC component)
-    magnitudes = {}
-    ak = 2 * np.real(imageFT)
-    bk = -2 * np.imag(imageFT)
-
-    magnitudes = np.sqrt(
-        ak * ak + bk * bk)
-
-    temp = magnitudes[0][0]  # remember DC
-    magnitudes[0][0] = 0  # ignore DC
-    maxMag = np.max(magnitudes)  # get max
-    magnitudes[0][0] = temp  # add DC back
-    print(maxMag)
     print('2. computing FT magnitudes')
-    # ==================================================3==========================================================
+    # Compute magnitudes and find max, exclude [0,0]
 
-    # ============================================================================================================
+    maxMag = 0
+    for i in range(width):
+        for j in range(height):
+            magnitude = abs(imageFT[j, i])
+            # Get max val
+            if magnitude > maxMag and (i != 0 or j != 0):
+                maxMag = magnitude
+    # Compute 40% of max
+    thresh = 0.4 * maxMag
+    print('   max val is: %d' % maxMag)
+    print('   threshold is: %d' % thresh)
+
     # Zero the components that are less than 40% of the max
-    gridImageFT = np.zeros((height, width), dtype=np.complex_)
-    coords = []
-
-    for i in range(height):
-        for j in range(width):
-            # if magnitude is higher than 40% of maxMag
-            if magnitudes[i][j] > (0.4 * maxMag):
-                # copy to grid ImageFT
-                gridImageFT[i, j] = magnitudes[i][j]
-                coords.append((i, j))
-            else:
-                # set to zero
-                gridImageFT[i, j] = 0
-
     print('3. removing low-magnitude components')
-
     if gridImageFT is None:
         gridImageFT = np.zeros((height, width), dtype=np.complex_)
-    # ===================================================END3=========================================================
 
-    # ====================================================4========================================================
+    # Variable for relevant x, y coordinates for part 4.
+    coords = []
+    for i in range(0, width):
+        for j in range(0, height):
+            magnitude = abs(imageFT[j, i])
+            if magnitude > thresh:
+                gridImageFT[j, i] = imageFT[j, i]
+                if j != 0 and i != 0:
+                    coords.append((j, i))
+
     # Find (angle, distance) to each peak
     #
     # lines = [ (angle1,distance1), (angle2,distance2) ]
-
-    #lines = [[1, 2], [3, 4]]
-
+    # lines = [[1,2],[3,4]]
     print('4. finding angles and distances of grid lines')
+    # Use RANSAC to find lines in gridImageFT
 
-    translated_coords = []
+    lines = findLinesHelper(coords)
 
-    # shifting of coordinates
-    for coord in coords:
-        i_p = wrap(coord[0] + (height/2).__ceil__(), height)
-        j_p = wrap(coord[1] + (width/2).__ceil__(), width)
-        translated_coords.append((i_p, j_p))
-
-    # finding angle1
-    translated_coords.sort(key=lambda tup: tup[1])
-    coord = translated_coords[-1]
-    angle1 = math.degrees(math.atan(np.true_divide((coord[0] - (height/2).__ceil__()), (coord[1] - (width/2).__ceil__()))))
-
-    # finding distance1
-    originIdx = translated_coords.index(((height/2).__ceil__(), (width/2).__ceil__()))
-    tmp_dist1 = np.sqrt((translated_coords[originIdx - 1][0] - (height/2).__ceil__()) * (translated_coords[originIdx - 1][0] - (height/2).__ceil__()) + (
-            translated_coords[originIdx - 1][1] - (width/2).__ceil__()) * (translated_coords[originIdx - 1][1] - (width/2).__ceil__()))
-    tmp_dist2 = np.sqrt((translated_coords[originIdx + 1][0] - (height/2).__ceil__()) * (translated_coords[originIdx + 1][0] - (height/2).__ceil__()) + (
-            translated_coords[originIdx + 1][1] - (width/2).__ceil__()) * (translated_coords[originIdx + 1][1] - (width/2).__ceil__()))
-
-    # checking both sides of the origin
-    if tmp_dist1 < tmp_dist2:
-        distance1 = tmp_dist1
-    else:
-        distance1 = tmp_dist2
-
-    # find angle2
-    translated_coords.sort(key=lambda tup: tup[0])
-    coord = translated_coords[-1]
-    angle2 = math.degrees(math.atan(np.true_divide(np.abs((coord[1] - (width/2).__ceil__())), (coord[0] - (height/2).__ceil__())))) + 90
-
-    # find distance2
-    originIdx = translated_coords.index(((height/2).__ceil__(), (width/2).__ceil__()))
-    tmp_dist1 = np.sqrt((translated_coords[originIdx - 1][0] - (height/2).__ceil__()) * (translated_coords[originIdx - 1][0] - (height/2).__ceil__()) + (
-            translated_coords[originIdx - 1][1] - (width/2).__ceil__()) * (translated_coords[originIdx - 1][1] - (width/2).__ceil__()))
-    tmp_dist2 = np.sqrt((translated_coords[originIdx + 1][0] - (height/2).__ceil__()) * (translated_coords[originIdx + 1][0] - (height/2).__ceil__()) + (
-            translated_coords[originIdx + 1][1] - (width/2).__ceil__()) * (translated_coords[originIdx + 1][1] - (width/2).__ceil__()))
-
-    if tmp_dist1 < tmp_dist2:
-        distance2 = tmp_dist1
-    else:
-        distance2 = tmp_dist2
-
-    lines = [(angle1, distance1), (angle2, distance2)]
-    # ====================================================END4========================================================
-
-    # ===================================================5=========================================================
     # Convert back to spatial domain to get a grid-like image
-    gridImage = inverseFT(gridImageFT)
     print('5. inverse FT')
 
     if gridImage is None:
         gridImage = np.zeros((height, width), dtype=np.complex_)
-    # ============================================================================================================
+    gridImage = inverseFT(gridImageFT)
 
-    # ===================================================6=========================================================
     # Remove grid image from original image
-
     print('6. remove grid')
     if resultImage is None:
         resultImage = image.copy()
-
-    # doesn't correctly replace pixels with average, just blacks them out
-    for i in range(height):
-        for j in range(width):
-            if gridImage[i, j] > 16:
-                resultImage[i, j] = 0
-            else:
-                resultImage[i, j] = image[i, j]
-
+    # loop through gridImage
+    for i in range(width):
+        for j in range(height):
+            #  grid threshold from instructions
+            if abs(gridImage[j, i]) > 16:
+                # vars used for keeping track for average
+                pSum = 0
+                pCount = 0
+                for line in lines:
+                    angle, dist = line
+                    angle = math.degrees(angle)
+                    angle += math.pi / 2
+                    # Delta is used to find pixels adjacent to line
+                    delta = (math.cos(angle), math.sin(angle))
+                    y2 = j
+                    x2 = i
+                    # travel towards normal until, end of image is reached or a dark spot is found
+                    while 0 <= y2 < height and 0 <= x2 < width and abs(gridImage[int(y2), int(x2)]) > 16:
+                        y2 += delta[0]
+                        x2 += delta[1]
+                    if 0 <= y2 < height and 0 <= x2 < width:
+                        pSum += abs(resultImage[int(y2), int(x2)])
+                        pCount += 1
+                    y2 = j
+                    x2 = i
+                    # travel away from normal until end of image is reached or a dark spot is found
+                    while 0 <= y2 < height and 0 <= x2 < width and abs(gridImage[int(y2), int(x2)]) > 16:
+                        y2 -= delta[0]
+                        x2 -= delta[1]
+                    if 0 <= y2 < height and 0 <= x2 < width:
+                        pSum += abs(resultImage[int(y2), int(x2)])
+                        pCount += 1
+                if pCount == 0:
+                    pCount = 1
+                # Find average and put final values into resultImage
+                pAvg = pSum / pCount
+                resultImage[j, i] = pAvg
     print('done')
-    # ============================================================================================================
-
     return resultImage, lines
 
 
@@ -277,6 +245,120 @@ if haveTK:
 
     root = Tkinter.Tk()
     root.withdraw()
+
+
+# Finds inliers and calls another function to find out the distance of a point to the 'line'
+def findLinesHelper(coords):
+    iterations = 1999  # just used my birth year. More iterations yields a better result but is more expensive
+    inlArrF = []
+    outArrF = []
+    firstCoords = None
+    for i in range(iterations):
+        # Randomly select two points to form a line with
+        while True:
+            t_p1 = coords[random.randrange(len(coords))]
+            t_p2 = coords[random.randrange(len(coords))]
+            if t_p1[1] != t_p2[1]:
+                break
+        # Gets inliers for line created between points t_p1 and t_p2
+        inliers, outliers = getInliers(t_p1, t_p2, coords)
+
+        # Check to make sure the best option was achieved
+        if len(inliers) > len(inlArrF):
+            inlArrF = inliers
+            outArrF = outliers
+            # To ensure the same coordinates aren't chosen again later on
+            firstCoords = (t_p1, t_p2)
+
+    # Get distance from closest point to origin
+    distance1 = findDistOrigin(inlArrF)
+
+    # Get angle for first line
+    t_p1, t_p2 = firstCoords
+    angle1 = findAngle(t_p1, t_p2)
+    # ensure angle is less than 180
+    if angle1 < 0:
+        angle1 += 180
+
+    # find second line
+    coords = outArrF
+
+    inlArrF = []
+    secondCoords = None
+    for i in range(iterations):
+        while True:
+            t_p1 = coords[random.randrange(len(coords))]
+            t_p2 = coords[random.randrange(len(coords))]
+            if t_p1[1] != t_p2[1]:
+                break
+        # Get inliers for the line created between points t_p1 and t_p2
+        inliers, outliers = getInliers(t_p1, t_p2, coords)
+        angle2 = findAngle(t_p1, t_p2)
+
+        # Check to see if angle1 and angle2 are similar by taking their difference
+        diff = abs((angle2 - angle1 + 180) % 360 - 180)
+        if diff > 90:
+            diff = 180 - diff
+
+        if math.degrees(diff) > 30:
+            if len(inliers) > len(inlArrF):
+                inlArrF = inliers
+                secondCoords = (t_p1, t_p2)
+    t_p1, t_p2 = secondCoords
+    angle2 = findAngle(t_p1, t_p2)
+    if angle2 < 0:
+        angle2 += 180
+
+    distance2 = findDistOrigin(inlArrF)
+
+    return [(angle1, distance1), (angle2, distance2)]
+
+
+# Gets points that are within a certain threshold distance from
+# line between pt1 and pt2
+def getInliers(x1, x2, coords):
+    inL = []
+    outL = []
+    for i in coords:
+        d = findDist(x1, x2, i)
+        # 5 is arbitrary term to determine threshold
+        if d < 7:
+            inL.append(i)
+        else:
+            outL.append(i)
+    return inL, outL
+
+
+# Finds the distance between a point and line
+def findDist(x1, x2, coord):
+    # Use dot product of inverse and point to get distance between point and intersect
+    pt2D = (x2[0] - x1[0], x2[1] - x1[1])
+    mag = math.sqrt(pt2D[0] ** 2 + pt2D[1] ** 2)
+    # get normal
+    n = (pt2D[1] / mag, -pt2D[0] / mag)
+
+    d = (coord[0] - x1[0], coord[1] - x1[1])
+    # Dot product
+    dist = abs(n[0] * d[0] + n[1] * d[1])
+    return dist
+
+
+# Just finds angle of two points on line
+def findAngle(pt1, pt2):
+    # find dx & dy
+    dx = abs(pt2[1] - pt1[1])
+    dy = abs(pt2[0] - pt1[0])
+    angle = np.arctan(dy / dx)
+    return angle
+
+
+def findDistOrigin(array):
+    temp = sys.maxsize  # arbitrary big number
+    for i in array:
+        dist = math.sqrt(i[1] ** 2 + i[0] ** 2)
+        if dist < temp:
+            temp = dist
+    return temp
 
 
 # Do a forward FT
