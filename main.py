@@ -231,8 +231,8 @@ def compute():
                     count = 1  # if we somehow didn't find any dark spots make sure we don't divide by zero
 
                 # Find the average and put final values into resultImage
-                pAvg = sum / count
-                resultImage[j, i] = pAvg
+                avg = sum / count
+                resultImage[j, i] = avg
     print('done')
     return resultImage, lines
 
