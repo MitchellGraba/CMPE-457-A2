@@ -167,8 +167,8 @@ def compute():
 
     # Variable for coordinates for part 4
     coords = []
-    for i in range(0, width):
-        for j in range(0, height):
+    for i in range(width):
+        for j in range(height):
             magnitude = abs(imageFT[j, i])
             if magnitude > thresh:
                 gridImageFT[j, i] = imageFT[j, i]
@@ -254,6 +254,7 @@ def findLinesHelper(coords):
     inlArrF = []
     outArrF = []
     firstCoords = None
+    timeout = 0
     for i in range(iterations):
         # Randomly select two points to form a line with
         while True:
@@ -288,9 +289,12 @@ def findLinesHelper(coords):
     secondCoords = None
     for i in range(iterations):
         while True:
+            timeout += 1
             t_p1 = coords[random.randrange(len(coords))]
             t_p2 = coords[random.randrange(len(coords))]
             if t_p1[1] != t_p2[1]:
+                if timeout > 9999:
+                    return [(angle1, distance1), (90, distance1)]
                 break
         # Get inliers for the line created between points t_p1 and t_p2
         inliers, outliers = getInliers(t_p1, t_p2, coords)
@@ -322,7 +326,7 @@ def getInliers(x1, x2, coords):
     outL = []
     for i in coords:
         d = findDist(x1, x2, i)
-        # 5 is arbitrary term to determine threshold
+        # 7 is arbitrary to determine threshold
         if d < 7:
             inL.append(i)
         else:
