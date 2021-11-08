@@ -165,7 +165,7 @@ def compute():
     if gridImageFT is None:
         gridImageFT = np.zeros((height, width), dtype=np.complex_)
 
-    # Variable for relevant x, y coordinates for part 4.
+    # Variable for coordinates for part 4
     coords = []
     for i in range(0, width):
         for j in range(0, height):
@@ -173,7 +173,7 @@ def compute():
             if magnitude > thresh:
                 gridImageFT[j, i] = imageFT[j, i]
                 if j != 0 and i != 0:
-                    coords.append((j, i))
+                    coords.append((j, i))  # ignore DC component
 
     # Find (angle, distance) to each peak
     #
@@ -202,13 +202,13 @@ def compute():
             #  grid threshold from instructions
             if abs(gridImage[j, i]) > 16:
                 # vars used for keeping track for average
-                pSum = 0
-                pCount = 0
+                sum = 0
+                count = 0
                 for line in lines:
                     angle, dist = line
                     angle = math.degrees(angle)
                     angle += math.pi / 2
-                    delta = (math.cos(angle), math.sin(angle)) # Delta is used to find pixels adjacent to line
+                    delta = (math.cos(angle), math.sin(angle))  # Delta is used to find pixels adjacent to line
                     y = j
                     x = i
                     # travel towards normal until, end of image is reached or a dark spot is found
@@ -216,8 +216,8 @@ def compute():
                         y += delta[0]
                         x += delta[1]
                     if 0 <= y < height and 0 <= x < width:
-                        pSum += abs(resultImage[int(y), int(x)])
-                        pCount += 1
+                        sum += abs(resultImage[int(y), int(x)])
+                        count += 1
                     y = j
                     x = i
                     # travel away from normal until end of image is reached or a dark spot is found
@@ -225,16 +225,17 @@ def compute():
                         y -= delta[0]
                         x -= delta[1]
                     if 0 <= y < height and 0 <= x < width:
-                        pSum += abs(resultImage[int(y), int(x)])
-                        pCount += 1
-                if pCount == 0:
-                    pCount = 1 # if we somehow didn't find any dark spots make sure we don't divide by zero
+                        sum += abs(resultImage[int(y), int(x)])
+                        count += 1
+                if count == 0:
+                    count = 1  # if we somehow didn't find any dark spots make sure we don't divide by zero
 
                 # Find the average and put final values into resultImage
-                pAvg = pSum / pCount
+                pAvg = sum / count
                 resultImage[j, i] = pAvg
     print('done')
     return resultImage, lines
+
 
 # File dialog
 
