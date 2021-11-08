@@ -195,6 +195,7 @@ def compute():
     print('6. remove grid')
     if resultImage is None:
         resultImage = image.copy()
+
     # loop through gridImage
     for i in range(width):
         for j in range(height):
@@ -207,34 +208,33 @@ def compute():
                     angle, dist = line
                     angle = math.degrees(angle)
                     angle += math.pi / 2
-                    # Delta is used to find pixels adjacent to line
-                    delta = (math.cos(angle), math.sin(angle))
-                    y2 = j
-                    x2 = i
+                    delta = (math.cos(angle), math.sin(angle)) # Delta is used to find pixels adjacent to line
+                    y = j
+                    x = i
                     # travel towards normal until, end of image is reached or a dark spot is found
-                    while 0 <= y2 < height and 0 <= x2 < width and abs(gridImage[int(y2), int(x2)]) > 16:
-                        y2 += delta[0]
-                        x2 += delta[1]
-                    if 0 <= y2 < height and 0 <= x2 < width:
-                        pSum += abs(resultImage[int(y2), int(x2)])
+                    while 0 <= y < height and 0 <= x < width and abs(gridImage[int(y), int(x)]) > 16:
+                        y += delta[0]
+                        x += delta[1]
+                    if 0 <= y < height and 0 <= x < width:
+                        pSum += abs(resultImage[int(y), int(x)])
                         pCount += 1
-                    y2 = j
-                    x2 = i
+                    y = j
+                    x = i
                     # travel away from normal until end of image is reached or a dark spot is found
-                    while 0 <= y2 < height and 0 <= x2 < width and abs(gridImage[int(y2), int(x2)]) > 16:
-                        y2 -= delta[0]
-                        x2 -= delta[1]
-                    if 0 <= y2 < height and 0 <= x2 < width:
-                        pSum += abs(resultImage[int(y2), int(x2)])
+                    while 0 <= y < height and 0 <= x < width and abs(gridImage[int(y), int(x)]) > 16:
+                        y -= delta[0]
+                        x -= delta[1]
+                    if 0 <= y < height and 0 <= x < width:
+                        pSum += abs(resultImage[int(y), int(x)])
                         pCount += 1
                 if pCount == 0:
-                    pCount = 1
-                # Find average and put final values into resultImage
+                    pCount = 1 # if we somehow didn't find any dark spots make sure we don't divide by zero
+
+                # Find the average and put final values into resultImage
                 pAvg = pSum / pCount
                 resultImage[j, i] = pAvg
     print('done')
     return resultImage, lines
-
 
 # File dialog
 
@@ -280,7 +280,7 @@ def findLinesHelper(coords):
     if angle1 < 0:
         angle1 += 180
 
-    # find second line
+    # repeat to find second line
     coords = outArrF
 
     inlArrF = []
