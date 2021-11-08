@@ -6,6 +6,7 @@
 #
 # DO NOT IMPORT OR USE ANY ADDITIONAL LIBRARIES.
 
+# Mitchell Graba 20056482
 
 import sys, os, math
 
@@ -51,7 +52,7 @@ translate = (0.0, 0.0)  # amount by which to translate images
 # Image
 
 imageDir = 'images'
-imageFilename = 'small.png'
+imageFilename = 'ecg-01.png'
 imagePath = os.path.join(imageDir, imageFilename)
 
 image = None  # the image as a 2D np.array
@@ -190,26 +191,28 @@ def compute():
     #lines = [[1, 2], [3, 4]]
 
     print('4. finding angles and distances of grid lines')
+
     translated_coords = []
 
     # shifting of coordinates
-    for elem in coords:
-        i_p = wrap(elem[0] + 172, 343)
-        j_p = wrap(elem[1] + 239, 478)
+    for coord in coords:
+        i_p = wrap(coord[0] + (height/2).__ceil__(), height)
+        j_p = wrap(coord[1] + (width/2).__ceil__(), width)
         translated_coords.append((i_p, j_p))
 
     # finding angle1
     translated_coords.sort(key=lambda tup: tup[1])
-    elem = translated_coords[-1]
-    angle1 = math.degrees(math.atan(np.true_divide((elem[0] - 172), (elem[1] - 239))))
+    coord = translated_coords[-1]
+    angle1 = math.degrees(math.atan(np.true_divide((coord[0] - (height/2).__ceil__()), (coord[1] - (width/2).__ceil__()))))
 
     # finding distance1
-    originIdx = translated_coords.index((172, 239))
-    tmp_dist1 = np.sqrt((translated_coords[originIdx - 1][0] - 172) * (translated_coords[originIdx - 1][0] - 172) + (
-            translated_coords[originIdx - 1][1] - 239) * (translated_coords[originIdx - 1][1] - 239))
-    tmp_dist2 = np.sqrt((translated_coords[originIdx + 1][0] - 172) * (translated_coords[originIdx + 1][0] - 172) + (
-            translated_coords[originIdx + 1][1] - 239) * (translated_coords[originIdx + 1][1] - 239))
+    originIdx = translated_coords.index(((height/2).__ceil__(), (width/2).__ceil__()))
+    tmp_dist1 = np.sqrt((translated_coords[originIdx - 1][0] - (height/2).__ceil__()) * (translated_coords[originIdx - 1][0] - (height/2).__ceil__()) + (
+            translated_coords[originIdx - 1][1] - (width/2).__ceil__()) * (translated_coords[originIdx - 1][1] - (width/2).__ceil__()))
+    tmp_dist2 = np.sqrt((translated_coords[originIdx + 1][0] - (height/2).__ceil__()) * (translated_coords[originIdx + 1][0] - (height/2).__ceil__()) + (
+            translated_coords[originIdx + 1][1] - (width/2).__ceil__()) * (translated_coords[originIdx + 1][1] - (width/2).__ceil__()))
 
+    # checking both sides of the origin
     if tmp_dist1 < tmp_dist2:
         distance1 = tmp_dist1
     else:
@@ -217,15 +220,15 @@ def compute():
 
     # find angle2
     translated_coords.sort(key=lambda tup: tup[0])
-    elem = translated_coords[-1]
-    angle2 = math.degrees(math.atan(np.true_divide(np.abs((elem[1] - 239)), (elem[0] - 172)))) + 90
+    coord = translated_coords[-1]
+    angle2 = math.degrees(math.atan(np.true_divide(np.abs((coord[1] - (width/2).__ceil__())), (coord[0] - (height/2).__ceil__())))) + 90
 
     # find distance2
-    originIdx = translated_coords.index((172, 239))
-    tmp_dist1 = np.sqrt((translated_coords[originIdx - 1][0] - 172) * (translated_coords[originIdx - 1][0] - 172) + (
-            translated_coords[originIdx - 1][1] - 239) * (translated_coords[originIdx - 1][1] - 239))
-    tmp_dist2 = np.sqrt((translated_coords[originIdx + 1][0] - 172) * (translated_coords[originIdx + 1][0] - 172) + (
-            translated_coords[originIdx + 1][1] - 239) * (translated_coords[originIdx + 1][1] - 239))
+    originIdx = translated_coords.index(((height/2).__ceil__(), (width/2).__ceil__()))
+    tmp_dist1 = np.sqrt((translated_coords[originIdx - 1][0] - (height/2).__ceil__()) * (translated_coords[originIdx - 1][0] - (height/2).__ceil__()) + (
+            translated_coords[originIdx - 1][1] - (width/2).__ceil__()) * (translated_coords[originIdx - 1][1] - (width/2).__ceil__()))
+    tmp_dist2 = np.sqrt((translated_coords[originIdx + 1][0] - (height/2).__ceil__()) * (translated_coords[originIdx + 1][0] - (height/2).__ceil__()) + (
+            translated_coords[originIdx + 1][1] - (width/2).__ceil__()) * (translated_coords[originIdx + 1][1] - (width/2).__ceil__()))
 
     if tmp_dist1 < tmp_dist2:
         distance2 = tmp_dist1
@@ -251,6 +254,7 @@ def compute():
     if resultImage is None:
         resultImage = image.copy()
 
+    # doesn't correctly replace pixels with average, just blacks them out
     for i in range(height):
         for j in range(width):
             if gridImage[i, j] > 16:
